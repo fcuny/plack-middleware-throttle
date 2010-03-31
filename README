@@ -1,0 +1,17 @@
+NAME
+    Plack::Middleware::Throttle -
+
+SYNOPSIS
+      use Plack::Middleware::Throttle;
+
+DESCRIPTION
+    Plack::Middleware::Throttle is
+
+AUTHOR
+    franck cuny <franck@lumberjaph.net>
+
+SEE ALSO
+LICENSE
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
