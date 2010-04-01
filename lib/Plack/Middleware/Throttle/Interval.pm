@@ -29,3 +29,45 @@ sub reset_time {
 }
 
 1;
+__END__
+
+=head1 NAME
+
+Plack::Middleware::Throttle::Interval - A Plack Middleware for rate-limiting incoming HTTP requests.
+
+=head1 SYNOPSIS
+
+  my $handler = builder {
+    enable "Throttle::Interval",
+        min     => 2,
+        backend => Plack::Middleware::Throttle::Backend::Hash->new();
+    sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
+  };
+
+=head1 DESCRIPTION
+
+How many request an host can do between an interval of time (in seconds).
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<in>
+
+How many requets can be done in an interval of time.
+
+=back
+
+=head1 AUTHOR
+
+franck cuny E<lt>franck@lumberjaph.netE<gt>
+
+=head1 SEE ALSO
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
+

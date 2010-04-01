@@ -127,43 +127,71 @@ Plack::Middleware::Throttle - A Plack Middleware for rate-limiting incoming HTTP
 
 =head1 SYNOPSIS
 
+  my $handler = builder {
+    enable "Throttle::Hourly",
+        max     => 2,
+        backend => Plack::Middleware::Throttle::Backend::Hash->new();
+    sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
+  };
+
 =head1 DESCRIPTION
 
-Set a limit on how many requests per hour is allowed on your API. In of a authorized request, 3 headers are added:
+This is a C<Plack> middleware that provides logic for rate-limiting incoming
+HTTP requests to Rack applications.
 
-=over 2
-
-=item B<X-RateLimit-Limit>
-
-How many requests are authorized by hours
-
-=item B<X-RateLimit-Remaining>
-
-How many remaining requests
-
-=item B<X-RateLimit-Reset>
-
-When will the counter be reseted (in epoch)
-
-=back
-
-=head2 VARIABLES
+This middleware provides three ways to handle throttling on incoming requests :
 
 =over 4
 
-=item B<backend>
+=item B<Hourly>
 
-Which backend to use. Currently only Hash and Redis are supported. If no
-backend is specified, Hash is used by default. Backend must implement B<set>,
-B<get> and B<incr>.
+How many requests an host can do in one hour. The counter is reseted each hour.
+
+=item B<Daily>
+
+How many requets an host can do in one hour. The counter is reseted each day.
+
+=item B<Interval>
+
+Which interval of time an host must respect between two request.
+
+=back
+
+=head1 OPTIONS
+
+=over 4
 
 =item B<code>
 
-HTTP code that will be returned when too many connections have been reached.
+HTTP code returned in the response when the limit have been exceeded. By default 503.
 
 =item B<message>
 
-HTTP message that will be returned when too many connections have been reached.
+HTTP message returned in the response when the limit have been exceeded. By defaylt "Over rate limit"
+
+=item B<backend>
+
+A cache object to store sessions informations.
+
+  backend => Redis->new(server => '127.0.0.1:6379');
+
+or
+
+  backend => Cache::Memcached->new(servers => ["10.0.0.15:11211", "10.0.0.15:11212"]);
+
+The cache object must implement B<get>, B<set> and B<incr> methods. By default, you can use C<Plack::Middleware::Throttle::Backend::Hash>.
+
+=item B<key_prefix>
+
+Key to prefix sessions entry in the cache
+
+=item B<white_list>
+
+An arrayref of hosts to put in a white list.
+
+=item B<black_list>
+
+An arrayref of hosts to put in a black list.
 
 =back
 
