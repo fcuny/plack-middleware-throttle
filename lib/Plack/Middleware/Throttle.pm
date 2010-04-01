@@ -17,6 +17,10 @@ has backend => ( is => 'rw', isa => 'Object', required => 1 );
 has key_prefix =>
     ( is => 'rw', isa => 'Str', lazy => 1, default => 'throttle' );
 has max => ( is => 'rw', isa => 'Int', lazy => 1, default => 100 );
+has white_list =>
+    ( is => 'rw', isa => 'ArrayRef', predicate => 'has_white_list' );
+has black_list =>
+    ( is => 'rw', isa => 'ArrayRef', predicate => 'has_black_list' );
 
 sub prepare_app {
     my $self = shift;
@@ -31,16 +35,17 @@ sub _create_backend {
     }
 
     return $backend if defined $backend && Scalar::Util::blessed $backend;
-    die "backend must be a cache objectn";
+    die "backend must be a cache object";
 }
 
 sub call {
     my ( $self, $env ) = @_;
 
-    my $res          = $self->app->($env);
-    my $request_done = $self->request_done($env);
+    my $res     = $self->app->($env);
+    my $key     = $self->cache_key($env);
+    my $allowed = $self->allowed($key);
 
-    if ( $request_done > $self->max ) {
+    if ( !$allowed ) {
         $self->over_rate_limit();
     }
     else {
@@ -48,14 +53,38 @@ sub call {
             $res,
             sub {
                 my $res = shift;
-                $self->add_headers( $res, $request_done );
+                $self->add_headers($res);
             }
         );
     }
 }
 
+sub allowed {
+    return 1;
+}
+
 sub request_done {
     return 1;
+}
+
+sub is_white_listed {
+    my ( $self, $env ) = @_;
+    return 1 if !$self->has_white_list;
+    my $ip = $env->{REMOTE_ADDR};
+    if ( grep { $_ == $ip } @{ $self->white_list } ) {
+        return 1;
+    }
+    return 0;
+}
+
+sub is_black_listed {
+    my ( $self, $env ) = @_;
+    return 0 if !$self->has_black_list;
+    my $ip = $env->{REMOTE_ADDR};
+    if ( grep { $_ == $ip } @{ $self->black_list } ) {
+        return 1;
+    }
+    return 0;
 }
 
 sub over_rate_limit {
@@ -71,12 +100,9 @@ sub over_rate_limit {
 }
 
 sub add_headers {
-    my ( $self, $res, $request_done ) = @_;
+    my ( $self, $res ) = @_;
     my $headers = $res->[1];
-    Plack::Util::header_set( $headers, 'X-RateLimit-Limit',
-        $self->max );
-    Plack::Util::header_set( $headers, 'X-RateLimit-Remaining',
-        ( $self->max - $request_done ) );
+    Plack::Util::header_set( $headers, 'X-RateLimit-Limit', $self->max );
     Plack::Util::header_set( $headers, 'X-RateLimit-Reset',
         $self->reset_time );
     return $res;
