@@ -40,7 +40,7 @@ __END__
 
 =head1 NAME
 
-Plack::Middleware::Throttle - A Plack Middleware for rate-limiting incoming HTTP requests.
+Plack::Middleware::Throttle::Limiter - A Plack Middleware for rate-limiting incoming HTTP requests.
 
 =head1 SYNOPSIS
 
