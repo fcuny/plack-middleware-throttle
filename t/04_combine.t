@@ -8,9 +8,16 @@ use HTTP::Request::Common;
 use Plack::Middleware::Throttle::Backend::Hash;
 
 my $handler = builder {
-    enable "Throttle::Hourly",
-        max     => 2,
+    enable "Throttle::Interval",
+        min     => 2,
         backend => Plack::Middleware::Throttle::Backend::Hash->new();
+    enable "Throttle::Hourly",
+        max     => 4,
+        backend => Plack::Middleware::Throttle::Backend::Hash->new();
+    enable "Throttle::Daily",
+        max     => 6,
+        backend => Plack::Middleware::Throttle::Backend::Hash->new();
+
     sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
 };
 
@@ -19,16 +26,22 @@ test_psgi
     client => sub {
     my $cb = shift;
     {
+        my $req = GET "http://localhost/";
+        my $res = $cb->($req);
+        is $res->code, 200, 'http response is 200';
         for ( 1 .. 2 ) {
             my $req = GET "http://localhost/";
             my $res = $cb->($req);
-            is $res->code, 200, 'http response is 200';
-            ok $res->headers('X-RateLimit-Limit'), 'header ratelimit';
+            is $res->code, 503, 'http response is 503';
         }
-        my $req = GET "http://localhost/";
-        my $res = $cb->($req);
+        sleep(3);
+        $req = GET "http://localhost/";
+        $res = $cb->($req);
+        is $res->code, 200, 'http response is 200';
+	sleep(3);
+        $req = GET "http://localhost/";
+        $res = $cb->($req);
         is $res->code, 503, 'http response is 503';
-        ok $res->headers('X-RateLimit-Reset'), 'header reset';
     }
     };
 
