@@ -32,6 +32,7 @@ sub _create_backend {
 
     if ( defined !$backend ) {
         Plack::Util::load_class("Plack::Middleware::Throttle::Backend::Hash");
+        return Plack::Middleware::Throttle::Backend::Hash->new;
     }
 
     return $backend if defined $backend && Scalar::Util::blessed $backend;
