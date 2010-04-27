@@ -21,6 +21,7 @@ has white_list =>
     ( is => 'rw', isa => 'ArrayRef', predicate => 'has_white_list' );
 has black_list =>
     ( is => 'rw', isa => 'ArrayRef', predicate => 'has_black_list' );
+has path => ( is => 'rw', isa => 'ArrayRef', predicate => 'has_path' );
 
 sub prepare_app {
     my $self = shift;
@@ -42,7 +43,12 @@ sub _create_backend {
 sub call {
     my ( $self, $env ) = @_;
 
-    my $res     = $self->app->($env);
+    my $res = $self->app->($env);
+
+    return $res            if $self->path_is_not_throttled($env);
+    return $res            if $self->is_white_listed($env);
+    return $self->forbiden if $self->is_black_listed($env);
+
     my $key     = $self->cache_key($env);
     my $allowed = $self->allowed($key);
 
@@ -70,7 +76,7 @@ sub request_done {
 
 sub is_white_listed {
     my ( $self, $env ) = @_;
-    return 1 if !$self->has_white_list;
+    return 0 if !$self->has_white_list;
     my $ip = $env->{REMOTE_ADDR};
     if ( grep { $_ == $ip } @{ $self->white_list } ) {
         return 1;
@@ -86,6 +92,24 @@ sub is_black_listed {
         return 1;
     }
     return 0;
+}
+
+sub path_is_not_throttled {
+    my ( $self, $env ) = @_;
+    return 0 if !$self->has_path;
+    my $path = $env->{PATH_INFO};
+    if ( grep { $path =~ /$_/ } @{ $self->path } ) {
+        return 1;
+    }
+    return 0;
+}
+
+sub forbiden {
+    my $self = shift;
+    return [
+        403, [ 'Content-Type' => 'text/plain', ],
+        ['your IP is black listed']
+    ];
 }
 
 sub over_rate_limit {
@@ -168,7 +192,7 @@ HTTP code returned in the response when the limit have been exceeded. By default
 
 =item B<message>
 
-HTTP message returned in the response when the limit have been exceeded. By defaylt "Over rate limit"
+HTTP message returned in the response when the limit have been exceeded. By defaylt "Over rate limit".
 
 =item B<backend>
 
@@ -184,7 +208,11 @@ The cache object must implement B<get>, B<set> and B<incr> methods. By default, 
 
 =item B<key_prefix>
 
-Key to prefix sessions entry in the cache
+Key to prefix sessions entry in the cache.
+
+=item B<path>
+
+List of regex for path exclusions.
 
 =item B<white_list>
 
