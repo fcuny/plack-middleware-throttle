@@ -23,12 +23,12 @@ test_psgi
             my $req = GET "http://localhost/";
             my $res = $cb->($req);
             is $res->code, 200, 'http response is 200';
-            ok $res->headers('X-RateLimit-Limit'), 'header ratelimit';
+            ok $res->header('X-RateLimit-Limit'), 'header ratelimit';
         }
         my $req = GET "http://localhost/";
         my $res = $cb->($req);
         is $res->code, 503, 'http response is 503';
-        ok $res->headers('X-RateLimit-Reset'), 'header reset';
+        ok $res->header('X-RateLimit-Reset'), 'header reset';
     }
     };
 

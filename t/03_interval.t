@@ -26,7 +26,7 @@ test_psgi
             my $req = GET "http://localhost/";
             my $res = $cb->($req);
             is $res->code, 503, 'http response is 503';
-            ok $res->headers('X-RateLimit-Reset'), 'header reset';
+            ok $res->header('X-RateLimit-Reset'), 'header reset';
         }
         sleep(3);
         $req = GET "http://localhost/";
