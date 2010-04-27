@@ -21,7 +21,7 @@ has white_list =>
     ( is => 'rw', isa => 'ArrayRef', predicate => 'has_white_list' );
 has black_list =>
     ( is => 'rw', isa => 'ArrayRef', predicate => 'has_black_list' );
-has path => ( is => 'rw', isa => 'ArrayRef', predicate => 'has_path' );
+has path => ( is => 'rw', isa => 'RegexpRef', predicate => 'has_path' );
 
 sub prepare_app {
     my $self = shift;
@@ -45,8 +45,9 @@ sub call {
 
     my $res = $self->app->($env);
 
-    return $res            if $self->path_is_not_throttled($env);
-    return $res            if $self->is_white_listed($env);
+    return $res unless $self->path_is_throttled($env);
+
+    return $res if $self->is_white_listed($env);
     return $self->forbiden if $self->is_black_listed($env);
 
     my $key     = $self->cache_key($env);
@@ -94,12 +95,16 @@ sub is_black_listed {
     return 0;
 }
 
-sub path_is_not_throttled {
+sub path_is_throttled {
     my ( $self, $env ) = @_;
+
     return 0 if !$self->has_path;
+    my $path_match = $self->path;
     my $path = $env->{PATH_INFO};
-    if ( grep { $path =~ /$_/ } @{ $self->path } ) {
-        return 1;
+
+    for ($path) {
+        my $matched = 'CODE' eq ref $path_match ? $path_match->($_) : $_ =~ $path_match;
+        $matched ? return 1 : return 0;
     }
     return 0;
 }
@@ -155,7 +160,8 @@ Plack::Middleware::Throttle - A Plack Middleware for rate-limiting incoming HTTP
   my $handler = builder {
     enable "Throttle::Hourly",
         max     => 2,
-        backend => Plack::Middleware::Throttle::Backend::Hash->new();
+        backend => Plack::Middleware::Throttle::Backend::Hash->new(),
+        path    => qr{^/foo};
     sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
   };
 
@@ -212,7 +218,7 @@ Key to prefix sessions entry in the cache.
 
 =item B<path>
 
-List of regex for path exclusions.
+URL pattern or a callback to match request to throttle. If no path is specified, the whole application will be throttled.
 
 =item B<white_list>
 

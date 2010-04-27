@@ -11,7 +11,7 @@ my $handler = builder {
     enable "Throttle::Hourly",
         max     => 1,
         backend => Plack::Middleware::Throttle::Backend::Hash->new(),
-        path    => [qr/^\/foo/];
+        path    => qr{^/foo};
     sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
 };
 
@@ -21,17 +21,17 @@ test_psgi
     my $cb = shift;
     {
         for ( 1 .. 2 ) {
-            my $req = GET "http://localhost/foo";
+            my $req = GET "http://localhost/bar";
             my $res = $cb->($req);
             is $res->content, 'hello world', 'content is valid';
             ok !$res->header('X-RateLimit-Limit'), 'no header ratelimit';
         }
-        my $req = GET "http://localhost/bar";
+        my $req = GET "http://localhost/foo";
         my $res = $cb->($req);
         is $res->content, 'hello world', 'content is valid';
         ok $res->header('X-RateLimit-Limit'), 'header ratelimit';
-        my $req = GET "http://localhost/bar";
-        my $res = $cb->($req);
+        $req = GET "http://localhost/foo";
+        $res = $cb->($req);
         is $res->code, 503, 'rate limit exceeded';
     }
 };
