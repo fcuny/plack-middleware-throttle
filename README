@@ -6,7 +6,8 @@ SYNOPSIS
       my $handler = builder {
         enable "Throttle::Hourly",
             max     => 2,
-            backend => Plack::Middleware::Throttle::Backend::Hash->new();
+            backend => Plack::Middleware::Throttle::Backend::Hash->new(),
+            path    => qr{^/foo};
         sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
       };
 
@@ -35,7 +36,7 @@ OPTIONS
 
     message
         HTTP message returned in the response when the limit have been
-        exceeded. By defaylt "Over rate limit"
+        exceeded. By defaylt "Over rate limit".
 
     backend
         A cache object to store sessions informations.
@@ -50,7 +51,11 @@ OPTIONS
         default, you can use "Plack::Middleware::Throttle::Backend::Hash".
 
     key_prefix
-        Key to prefix sessions entry in the cache
+        Key to prefix sessions entry in the cache.
+
+    path
+        URL pattern or a callback to match request to throttle. If no path
+        is specified, the whole application will be throttled.
 
     white_list
         An arrayref of hosts to put in a white list.
