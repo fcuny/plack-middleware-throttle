@@ -98,7 +98,7 @@ sub is_black_listed {
 sub path_is_throttled {
     my ( $self, $env ) = @_;
 
-    return 0 if !$self->has_path;
+    return 1 if !$self->has_path;
     my $path_match = $self->path;
     my $path = $env->{PATH_INFO};
 
@@ -106,7 +106,7 @@ sub path_is_throttled {
         my $matched = 'CODE' eq ref $path_match ? $path_match->($_) : $_ =~ $path_match;
         $matched ? return 1 : return 0;
     }
-    return 0;
+    return 1;
 }
 
 sub forbiden {
@@ -161,7 +161,7 @@ Plack::Middleware::Throttle - A Plack Middleware for rate-limiting incoming HTTP
     enable "Throttle::Hourly",
         max     => 2,
         backend => Plack::Middleware::Throttle::Backend::Hash->new(),
-        path    => qr{^/foo};
+        path    => qr{^/api};
     sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
   };
 

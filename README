@@ -7,7 +7,7 @@ SYNOPSIS
         enable "Throttle::Hourly",
             max     => 2,
             backend => Plack::Middleware::Throttle::Backend::Hash->new(),
-            path    => qr{^/foo};
+            path    => qr{^/api};
         sub { [ '200', [ 'Content-Type' => 'text/html' ], ['hello world'] ] };
       };
 
@@ -49,6 +49,9 @@ OPTIONS
 
         The cache object must implement get, set and incr methods. By
         default, you can use "Plack::Middleware::Throttle::Backend::Hash".
+
+        By default, if no backend is specified,
+        Plack::Middleware::Throttle::Backend::Hash is used.
 
     key_prefix
         Key to prefix sessions entry in the cache.
