@@ -52,7 +52,7 @@ How many request an host can do between an interval of time (in seconds).
 
 =over 4
 
-=item B<in>
+=item B<min>
 
 How many requets can be done in an interval of time.
 

@@ -212,6 +212,8 @@ or
 
 The cache object must implement B<get>, B<set> and B<incr> methods. By default, you can use C<Plack::Middleware::Throttle::Backend::Hash>.
 
+By default, if no backend is specified, L<Plack::Middleware::Throttle::Backend::Hash> is used.
+
 =item B<key_prefix>
 
 Key to prefix sessions entry in the cache.
